@@ -2,6 +2,8 @@
 
 Tracktor is an application designed to aggregate your activity data from various services like [Letterboxd](https://letterboxd.com/), [Goodreads](https://www.goodreads.com/), [Strava](https://www.strava.com/), and [Bluesky](https://bsky.app/). By making API calls to these services, Tracktor provides you with a macro-level view of all the things you spend your time doing.
 
+<img width="678" alt="Screenshot 2025-01-04 at 3 03 32 PM" src="https://github.com/user-attachments/assets/0ffa3cb9-ccc1-4aa9-aceb-ec0bf534afae" />
+
 ## Features
 - 📚 Aggregate reading activity from Goodreads
 - 🎥 Track movie watching habits from Letterboxd
