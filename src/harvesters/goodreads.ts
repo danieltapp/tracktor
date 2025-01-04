@@ -1,4 +1,15 @@
+import dotenv from "dotenv";
 import Parser from "rss-parser";
+
+dotenv.config();
+
+const { GOODREADS_USER_ID, GOODREADS_RSS_KEY } = process.env;
+
+if (!GOODREADS_USER_ID || !GOODREADS_RSS_KEY) {
+  throw new Error(
+    "Missing GOODREADS_USER_ID or GOODREADS_RSS_KEY in environment variables."
+  );
+}
 
 type GoodreadsFeedItem = {
   title: string;
@@ -27,7 +38,7 @@ const parser = new Parser<GoodreadsFeed, GoodreadsFeedItem>();
  */
 export async function fetchGoodreadsActivity(year: number): Promise<number> {
   const feed = await parser.parseURL(
-    `https://www.goodreads.com/review/list_rss/${process.env.GOODREADS_USER_ID}?key=${process.env.GOODREADS_RSS_KEY}&shelf=read`
+    `https://www.goodreads.com/review/list_rss/${GOODREADS_USER_ID}?key=${GOODREADS_RSS_KEY}&shelf=read`
   );
   const items = feed.items as GoodreadsFeedItem[];
   const groupedByYear = items.reduce<Record<string, GoodreadsFeedItem[]>>(

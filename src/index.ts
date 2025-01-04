@@ -1,30 +1,29 @@
-import dotenv from "dotenv";
-import { fetchGoodreadsActivity, fetchLetterboxdActivity } from "./harvesters";
+import tracktor from "./tracktor";
+import cron from "node-cron";
+import express from "express";
 
-dotenv.config();
+const app = express();
+const PORT = 3000;
 
-async function tracktor() {
-  console.log("👨🏻‍🌾 Tracktor is up and running 🚜!");
+app.get("/", (req, res) => {
+  res.send("👨🏻‍🌾 Tracktor server is running 🚜!");
+});
 
-  try {
-    const letterboxdCount = await fetchLetterboxdActivity(2025);
-    console.log(
-      `You've watched ${letterboxdCount} movies on Letterboxd this year 🎬`
-    );
-  } catch (error) {
-    console.warn("👨🏻‍🌾 Tracktor failed to harvest Letterboxd 🚜!");
+app.listen(PORT, () => {
+  console.log(
+    `👨🏻‍🌾 Tracktor server is listening on http://localhost:${PORT} 🚜!`
+  );
+});
+
+cron.schedule(
+  "0 8 * * *",
+  () => {
+    console.log("👨🏻‍🌾 Tracktor cron job started 🚜!");
+    tracktor();
+  },
+  {
+    timezone: "America/New_York",
   }
+);
 
-  try {
-    const goodreadsCount = await fetchGoodreadsActivity(2025);
-    console.log(
-      `You've read ${goodreadsCount} books on Goodreads this year 📚`
-    );
-  } catch (error) {
-    console.warn("👨🏻‍🌾 Tracktor failed to harvest Goodreads 🚜!");
-  }
-
-  console.log("👨🏻‍🌾 Tracktor is done 🚜!");
-}
-
-tracktor();
+console.log("👨🏻‍🌾 Tracktor cron job scheduled to run every day at 8 AM EST 🚜!");

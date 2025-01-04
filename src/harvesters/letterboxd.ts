@@ -1,4 +1,13 @@
+import dotenv from "dotenv";
 import Parser from "rss-parser";
+
+dotenv.config();
+
+const { LETTERBOXD_USER } = process.env;
+
+if (!LETTERBOXD_USER) {
+  throw new Error("Missing LETTERBOXD_USER in environment variables.");
+}
 
 type LetterboxdFeedItem = {
   creator: string;
@@ -24,7 +33,7 @@ const parser = new Parser();
  */
 export async function fetchLetterboxdActivity(year?: number): Promise<number> {
   const feed = await parser.parseURL(
-    `https://letterboxd.com/${process.env.LETTERBOXD_USER}/rss/`
+    `https://letterboxd.com/${LETTERBOXD_USER}/rss/`
   );
   const items = feed.items as LetterboxdFeedItem[];
   const groupedByYear = items.reduce<Record<string, LetterboxdFeedItem[]>>(
