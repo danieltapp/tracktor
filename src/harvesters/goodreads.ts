@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import Parser from "rss-parser";
+import formatYear from "../utils/format-year";
 
 dotenv.config();
 
@@ -43,7 +44,7 @@ export async function fetchGoodreadsActivity(year: number): Promise<number> {
   const items = feed.items as GoodreadsFeedItem[];
   const groupedByYear = items.reduce<Record<string, GoodreadsFeedItem[]>>(
     (acc, item) => {
-      const year = new Date(item.isoDate).getFullYear().toString();
+      const year = formatYear(item.isoDate);
       acc[year] = acc[year] || [];
       acc[year].push(item);
       return acc;

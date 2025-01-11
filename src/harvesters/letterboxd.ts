@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import Parser from "rss-parser";
+import formatYear from "../utils/format-year";
 
 dotenv.config();
 
@@ -38,7 +39,7 @@ export async function fetchLetterboxdActivity(year?: number): Promise<number> {
   const items = feed.items as LetterboxdFeedItem[];
   const groupedByYear = items.reduce<Record<string, LetterboxdFeedItem[]>>(
     (acc, item) => {
-      const year = new Date(item.isoDate).getFullYear().toString();
+      const year = formatYear(item.isoDate);
       acc[year] = acc[year] || [];
       acc[year].push(item);
       return acc;
