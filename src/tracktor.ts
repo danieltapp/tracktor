@@ -96,6 +96,7 @@ async function tracktor() {
   );
 
   console.log(`👨🏻‍🌾 Tracktor finished at ${new Date().toISOString()} 🚜!`);
+  return;
 }
 
 export default tracktor;
