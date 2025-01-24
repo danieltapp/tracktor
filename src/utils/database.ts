@@ -36,7 +36,7 @@ export async function writeTracktorCount(
       if (count > existingData.count) {
         const { error: updateError } = await supabase
           .from("tracktor_counts")
-          .update({ count })
+          .update({ count, updated_at: new Date().toISOString() })
           .eq("id", existingData.id);
 
         if (updateError) throw updateError;
