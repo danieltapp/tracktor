@@ -4,7 +4,7 @@ import {
   fetchGitHubContributions,
 } from "./harvesters";
 import type { TracktorService } from "./harvesters";
-import { writeTracktorCount } from "./utils/database";
+import { getLastUpdatedFromDB, writeTracktorCount } from "./utils/database";
 
 interface Service {
   name: TracktorService;
@@ -26,22 +26,27 @@ async function tracktor() {
   const timestamp = new Date().toISOString();
   console.log(`👨🏻‍🌾 Tracktor is up and running 🚜! - ${timestamp}`);
 
+  // Fetch lastUpdated timestamp for Letterboxd
+  const lastLetterboxdUpdate = await getLastUpdatedFromDB("letterboxd", 2025);
+  const lastGoodreadsUpdate = await getLastUpdatedFromDB("goodreads", 2025);
+  const lastGitHubUpdate = await getLastUpdatedFromDB("github", 2025);
+
   const services: Service[] = [
     {
       name: "letterboxd",
-      fetch: () => fetchLetterboxdActivity(2025),
+      fetch: () => fetchLetterboxdActivity(2025, lastLetterboxdUpdate ?? ""),
       key: "letterboxd",
       activityTypes: [{ name: "movies" }],
     },
     {
       name: "goodreads",
-      fetch: () => fetchGoodreadsActivity(2025),
+      fetch: () => fetchGoodreadsActivity(2025, lastGoodreadsUpdate ?? ""),
       key: "goodreads",
       activityTypes: [{ name: "books" }],
     },
     {
       name: "github",
-      fetch: () => fetchGitHubContributions(2025),
+      fetch: () => fetchGitHubContributions(2025, lastGitHubUpdate ?? ""),
       key: "github",
       activityTypes: [
         {
@@ -86,13 +91,13 @@ async function tracktor() {
   }
 
   console.log(
-    `📚 Goodreads: ${totals.goodreads} books read in 2025.
-🎥 Letterboxd: ${totals.letterboxd} movies watched in 2025.
-💻 GitHub: ${
-      typeof totals.github === "object" ? totals.github.totalCommits : 0
-    } commits in 2025 across ${
+    `📚 Goodreads: ${totals.goodreads} new books read since the last run.
+  🎥 Letterboxd: ${totals.letterboxd} new movies watched since the last run.
+  💻 GitHub: ${
+    typeof totals.github === "object" ? totals.github.totalCommits : 0
+  } new commits across ${
       typeof totals.github === "object" ? totals.github.repositoryCount : 0
-    } repositories.`
+    } repositories since the last run.`
   );
 
   console.log(`👨🏻‍🌾 Tracktor finished at ${new Date().toISOString()} 🚜!`);

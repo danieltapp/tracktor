@@ -37,26 +37,27 @@ const parser = new Parser<GoodreadsFeed, GoodreadsFeedItem>();
  * @param {number} [year] - The year for which to count activities.
  * @returns {Promise<number>} The count of activities for the specified year or total activities.
  */
-export async function fetchGoodreadsActivity(year: number): Promise<number> {
+export async function fetchGoodreadsActivity(
+  year: number,
+  lastUpdated?: string
+): Promise<number> {
   const feed = await parser.parseURL(
     `https://www.goodreads.com/review/list_rss/${GOODREADS_USER_ID}?key=${GOODREADS_RSS_KEY}&shelf=read`
   );
   const items = feed.items as GoodreadsFeedItem[];
-  const groupedByYear = items.reduce<Record<string, GoodreadsFeedItem[]>>(
-    (acc, item) => {
-      const year = formatYear(item.isoDate);
-      acc[year] = acc[year] || [];
-      acc[year].push(item);
-      return acc;
-    },
-    {}
+  const filteredByYear = items.filter(
+    (item) => formatYear(item.isoDate) === String(year)
   );
 
-  if (year) {
-    return groupedByYear[year]?.length || 0;
+  let filteredItems = filteredByYear;
+  if (lastUpdated) {
+    const lastUpdatedDate = new Date(lastUpdated);
+    filteredItems = filteredByYear.filter(
+      (item) => new Date(item.isoDate) > lastUpdatedDate
+    );
   }
 
-  return items?.length || 0;
+  return filteredItems.length;
 }
 
 export default fetchGoodreadsActivity;

@@ -37,7 +37,12 @@ type ContributionsCollection = {
  * @param {number} year - The year for which to count contributions.
  * @returns {Promise<number>} The count of contributions for the specified year or total contributions.
  */
-async function fetchGitHubContributions(year: number) {
+async function fetchGitHubContributions(year: number, lastUpdated?: string) {
+  const fromDate = lastUpdated
+    ? new Date(lastUpdated).toISOString()
+    : `${year}-01-01T00:00:00Z`;
+  const toDate = new Date().toISOString();
+
   const query = `
     query ($username: String!, $from: DateTime!, $to: DateTime!) {
       user(login: $username) {
@@ -61,8 +66,8 @@ async function fetchGitHubContributions(year: number) {
 
   const variables = {
     username: GITHUB_USERNAME,
-    from: `${year}-01-01T00:00:00Z`,
-    to: `${year}-12-31T23:59:59Z`,
+    from: fromDate,
+    to: toDate,
   };
 
   try {
@@ -78,12 +83,13 @@ async function fetchGitHubContributions(year: number) {
 
     const data: ContributionsCollection =
       response.data.data.user.contributionsCollection;
-    const totalCommits = data.totalCommitContributions;
-    const repositoryCount = data.commitContributionsByRepository?.map(
+
+    const newCommits = data.totalCommitContributions;
+    const newRepositoryCount = data.commitContributionsByRepository?.map(
       ({ repository }) => repository.name
     )?.length;
 
-    return { totalCommits, repositoryCount };
+    return { totalCommits: newCommits, repositoryCount: newRepositoryCount };
   } catch (error) {
     console.error("Error fetching GitHub contributions.");
     throw error;
