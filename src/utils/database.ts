@@ -37,16 +37,19 @@ export async function writeTracktorCount(
   const currentCount = data?.count || 0;
   const newCount = currentCount + count; // Increment count
 
-  // Upsert new count
-  const { error: upsertError } = await supabase.from("tracktor_counts").upsert([
-    {
-      service,
-      year,
-      activity_type: activityType,
-      count: newCount,
-      updated_at: new Date().toISOString(),
-    },
-  ]);
+  // Upsert new count (ENSURE IT UPDATES INSTEAD OF CREATING NEW ROWS)
+  const { error: upsertError } = await supabase.from("tracktor_counts").upsert(
+    [
+      {
+        service,
+        year,
+        activity_type: activityType,
+        count: newCount,
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    { onConflict: "service,year,activity_type" } // Ensure correct row is updated
+  );
 
   if (upsertError) {
     console.error(`Error updating count for ${service}:`, upsertError);
