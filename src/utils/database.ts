@@ -14,53 +14,70 @@ import { supabase } from "./supabase-client";
  * @returns {Promise<void>} - A promise that resolves when the operation is complete.
  */
 export async function writeTracktorCount(
-  service: TracktorService,
+  service: string,
   year: number,
   count: number,
   activityType: string
-): Promise<void> {
-  try {
-    const { data: existingData, error: fetchError } = await supabase
-      .from("tracktor_counts")
-      .select("id, count")
-      .eq("service", service)
-      .eq("year", year)
-      .eq("activity_type", activityType)
-      .single();
+) {
+  // Get existing count from Supabase
+  const { data, error } = await supabase
+    .from("tracktor_counts")
+    .select("count")
+    .eq("service", service)
+    .eq("year", year)
+    .eq("activity_type", activityType)
+    .single();
 
-    if (fetchError && fetchError.code !== "PGRST116") {
-      throw fetchError;
-    }
-
-    if (existingData) {
-      if (count > existingData.count) {
-        const { error: updateError } = await supabase
-          .from("tracktor_counts")
-          .update({ count, updated_at: new Date().toISOString() })
-          .eq("id", existingData.id);
-
-        if (updateError) throw updateError;
-
-        console.log(
-          `Updated count for ${service} (${year}, ${activityType}) to ${count}. Previous: ${existingData.count}`
-        );
-      } else {
-        console.log(
-          `Count for ${service} (${year}, ${activityType}) remains unchanged. Existing: ${existingData.count}, New: ${count}`
-        );
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from("tracktor_counts")
-        .insert([{ service, year, count, activity_type: activityType }]);
-
-      if (insertError) throw insertError;
-
-      console.log(
-        `Inserted new count for ${service} (${year}, ${activityType}): ${count}`
-      );
-    }
-  } catch (error) {
-    console.error("Error writing to Supabase:", error);
+  if (error && error.code !== "PGRST116") {
+    // Ignore 'no rows' error
+    console.error(`Error fetching count for ${service}:`, error);
+    return;
   }
+
+  const currentCount = data?.count || 0;
+  const newCount = currentCount + count; // Increment count
+
+  // Upsert new count
+  const { error: upsertError } = await supabase.from("tracktor_counts").upsert([
+    {
+      service,
+      year,
+      activity_type: activityType,
+      count: newCount,
+      updated_at: new Date().toISOString(),
+    },
+  ]);
+
+  if (upsertError) {
+    console.error(`Error updating count for ${service}:`, upsertError);
+  } else {
+    console.log(`✅ Updated ${service}: ${newCount} total for ${year}`);
+  }
+}
+
+/**
+ * Retrieves the most recent `updated_at` timestamp for a given service and year.
+ */
+export async function getLastUpdatedFromDB(
+  service: string,
+  year: number
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("tracktor_counts")
+    .select("updated_at")
+    .eq("service", service)
+    .eq("year", year)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    console.error(
+      `Error fetching last updated timestamp for ${service}:`,
+      error
+    );
+    return null;
+  }
+
+  return data?.updated_at || null;
 }
