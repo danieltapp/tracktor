@@ -80,6 +80,7 @@ async function tracktor() {
       totals[service.key] = result;
 
       for (const activityType of service.activityTypes) {
+        if (activityType.name === "repositories") continue;
         const count = activityType.getCount?.(result) ?? (result as number);
 
         await writeTracktorCount(service.name, 2025, count, activityType.name);

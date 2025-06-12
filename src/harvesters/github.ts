@@ -85,11 +85,14 @@ async function fetchGitHubContributions(year: number, lastUpdated?: string) {
       response.data.data.user.contributionsCollection;
 
     const newCommits = data.totalCommitContributions;
-    const newRepositoryCount = data.commitContributionsByRepository?.map(
-      ({ repository }) => repository.name
-    )?.length;
+    const uniqueRepoNames = new Set(
+      data.commitContributionsByRepository.map(
+        ({ repository }) => repository.name
+      )
+    );
+    const repositoryCount = uniqueRepoNames.size;
 
-    return { totalCommits: newCommits, repositoryCount: newRepositoryCount };
+    return { totalCommits: newCommits, repositoryCount };
   } catch (error) {
     console.error("Error fetching GitHub contributions.");
     throw error;
