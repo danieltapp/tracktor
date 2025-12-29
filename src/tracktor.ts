@@ -24,29 +24,30 @@ type GitHubActivity = Awaited<ReturnType<typeof fetchGitHubContributions>>;
  */
 async function tracktor() {
   const timestamp = new Date().toISOString();
+  const currentYear = new Date().getFullYear();
   console.log(`👨🏻‍🌾 Tracktor is up and running 🚜! - ${timestamp}`);
 
   // Fetch lastUpdated timestamp for Letterboxd
-  const lastLetterboxdUpdate = await getLastUpdatedFromDB("letterboxd", 2025);
-  const lastGoodreadsUpdate = await getLastUpdatedFromDB("goodreads", 2025);
-  const lastGitHubUpdate = await getLastUpdatedFromDB("github", 2025);
+  const lastLetterboxdUpdate = await getLastUpdatedFromDB("letterboxd", currentYear);
+  const lastGoodreadsUpdate = await getLastUpdatedFromDB("goodreads", currentYear);
+  const lastGitHubUpdate = await getLastUpdatedFromDB("github", currentYear);
 
   const services: Service[] = [
     {
       name: "letterboxd",
-      fetch: () => fetchLetterboxdActivity(2025, lastLetterboxdUpdate ?? ""),
+      fetch: () => fetchLetterboxdActivity(currentYear, lastLetterboxdUpdate ?? ""),
       key: "letterboxd",
       activityTypes: [{ name: "movies" }],
     },
     {
       name: "goodreads",
-      fetch: () => fetchGoodreadsActivity(2025, lastGoodreadsUpdate ?? ""),
+      fetch: () => fetchGoodreadsActivity(currentYear, lastGoodreadsUpdate ?? ""),
       key: "goodreads",
       activityTypes: [{ name: "books" }],
     },
     {
       name: "github",
-      fetch: () => fetchGitHubContributions(2025, lastGitHubUpdate ?? ""),
+      fetch: () => fetchGitHubContributions(currentYear, lastGitHubUpdate ?? ""),
       key: "github",
       activityTypes: [
         {
@@ -83,7 +84,7 @@ async function tracktor() {
         if (activityType.name === "repositories") continue;
         const count = activityType.getCount?.(result) ?? (result as number);
 
-        await writeTracktorCount(service.name, 2025, count, activityType.name);
+        await writeTracktorCount(service.name, currentYear, count, activityType.name);
       }
     } catch (error) {
       console.error(`Error fetching ${service.name} activity.`);
