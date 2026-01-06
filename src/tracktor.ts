@@ -28,9 +28,9 @@ async function tracktor() {
   console.log(`👨🏻‍🌾 Tracktor is up and running 🚜! - ${timestamp}`);
 
   // Fetch lastUpdated timestamp for Letterboxd
-  const lastLetterboxdUpdate = await getLastUpdatedFromDB("letterboxd", currentYear);
-  const lastGoodreadsUpdate = await getLastUpdatedFromDB("goodreads", currentYear);
-  const lastGitHubUpdate = await getLastUpdatedFromDB("github", currentYear);
+  const lastLetterboxdUpdate = await getLastUpdatedFromDB("letterboxd", currentYear, "movies");
+  const lastGoodreadsUpdate = await getLastUpdatedFromDB("goodreads", currentYear, "books");
+  const lastGitHubUpdate = await getLastUpdatedFromDB("github", currentYear, "commits");
 
   const services: Service[] = [
     {
