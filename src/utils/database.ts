@@ -59,17 +59,24 @@ export async function writeTracktorCount(
 }
 
 /**
- * Retrieves the most recent `updated_at` timestamp for a given service and year.
+ * Retrieves the most recent `updated_at` timestamp for a given service, year, and activity type.
  */
 export async function getLastUpdatedFromDB(
   service: string,
-  year: number
+  year: number,
+  activityType?: string
 ): Promise<string | null> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("tracktor_counts")
     .select("updated_at")
     .eq("service", service)
-    .eq("year", year)
+    .eq("year", year);
+
+  if (activityType) {
+    query = query.eq("activity_type", activityType);
+  }
+
+  const { data, error } = await query
     .order("updated_at", { ascending: false })
     .limit(1)
     .single();
