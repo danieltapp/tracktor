@@ -4,29 +4,29 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const { STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REFRESH_TOKEN } =
-  process.env;
+	process.env;
 
 if (!STRAVA_CLIENT_ID || !STRAVA_CLIENT_SECRET || !STRAVA_REFRESH_TOKEN) {
-  throw new Error("Missing required environment variables for Strava API.");
+	throw new Error("Missing required environment variables for Strava API.");
 }
 
-async function refreshAccessToken(): Promise<string> {
-  try {
-    const response = await axios.post("https://www.strava.com/oauth/token", {
-      client_id: STRAVA_CLIENT_ID,
-      client_secret: STRAVA_CLIENT_SECRET,
-      refresh_token: STRAVA_REFRESH_TOKEN,
-      grant_type: "refresh_token",
-    });
+export async function refreshAccessToken(): Promise<string> {
+	try {
+		const response = await axios.post("https://www.strava.com/oauth/token", {
+			client_id: STRAVA_CLIENT_ID,
+			client_secret: STRAVA_CLIENT_SECRET,
+			refresh_token: STRAVA_REFRESH_TOKEN,
+			grant_type: "refresh_token",
+		});
 
-    const { access_token, refresh_token: newRefreshToken } = response.data;
-    console.log(`New Refresh Token: ${newRefreshToken}`);
+		const { access_token, refresh_token: newRefreshToken } = response.data;
+		console.log(`New Refresh Token: ${newRefreshToken}`);
 
-    return access_token;
-  } catch (error) {
-    console.error("Error refreshing access token.");
-    throw new Error("Failed to refresh access token");
-  }
+		return access_token;
+	} catch (error) {
+		console.error("Error refreshing access token.");
+		throw new Error("Failed to refresh access token");
+	}
 }
 
 /**
@@ -37,37 +37,37 @@ async function refreshAccessToken(): Promise<string> {
  * our DB when the activity type is a run.
  */
 async function fetchStravaActivity({
-  before,
-  after,
-  page = 1,
-  per_page = 30,
+	before,
+	after,
+	page = 1,
+	per_page = 30,
 }: {
-  before?: number;
-  after?: number;
-  page?: number;
-  per_page?: number;
+	before?: number;
+	after?: number;
+	page?: number;
+	per_page?: number;
 } = {}) {
-  try {
-    const accessToken = await refreshAccessToken();
-    const params: Record<string, string | number> = {
-      page,
-      per_page,
-    };
-    if (before) params.before = before;
-    if (after) params.after = after;
+	try {
+		const accessToken = await refreshAccessToken();
+		const params: Record<string, string | number> = {
+			page,
+			per_page,
+		};
+		if (before) params.before = before;
+		if (after) params.after = after;
 
-    const response = await axios.get(
-      "https://www.strava.com/api/v3/athlete/activities",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params,
-      }
-    );
+		const response = await axios.get(
+			"https://www.strava.com/api/v3/athlete/activities",
+			{
+				headers: { Authorization: `Bearer ${accessToken}` },
+				params,
+			},
+		);
 
-    console.log(JSON.stringify(response.data, null, 2));
-  } catch (error) {
-    console.error("Error fetching activities.");
-  }
+		console.log(JSON.stringify(response.data, null, 2));
+	} catch (error) {
+		console.error("Error fetching activities.");
+	}
 }
 
 export default fetchStravaActivity;
