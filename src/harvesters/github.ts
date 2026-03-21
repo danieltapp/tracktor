@@ -1,5 +1,6 @@
 import axios from "axios";
 import dotenv from "dotenv";
+import { fetchGitHubLanguages, type LanguageStats } from "./github-languages";
 
 dotenv.config();
 
@@ -26,6 +27,11 @@ type ContributionsCollection = {
       totalCount: number;
     };
   }[];
+};
+
+export type GitHubData = {
+  contributions: { totalCommits: number; repositoryCount: number } | null;
+  languages: LanguageStats[] | null;
 };
 
 /**
@@ -97,6 +103,22 @@ async function fetchGitHubContributions(year: number, lastUpdated?: string) {
     console.error("Error fetching GitHub contributions.");
     throw error;
   }
+}
+
+export async function fetchGitHubData(
+  year: number,
+  lastUpdated?: string
+): Promise<GitHubData> {
+  const [contributions, languages] = await Promise.allSettled([
+    fetchGitHubContributions(year, lastUpdated),
+    fetchGitHubLanguages(year),
+  ]);
+
+  return {
+    contributions:
+      contributions.status === "fulfilled" ? contributions.value : null,
+    languages: languages.status === "fulfilled" ? languages.value : null,
+  };
 }
 
 export default fetchGitHubContributions;
