@@ -1,21 +1,26 @@
 import {
   fetchGoodreadsActivity,
   fetchLetterboxdActivity,
-  fetchGitHubContributions,
+  fetchGitHubData,
+  type GitHubData,
 } from "./harvesters";
 import type { TracktorService } from "./harvesters";
 import { getLastUpdatedFromDB, writeTracktorCount } from "./utils/database";
+import { writeLanguageSnapshot } from "./utils/language-database";
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} bytes`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
 
 interface Service {
   name: TracktorService;
-  fetch: () => Promise<
-    number | { totalCommits: number; repositoryCount: number }
-  >;
+  fetch: () => Promise<number | GitHubData>;
   key: string;
   activityTypes: { name: string; getCount?: (data: any) => number }[];
 }
-
-type GitHubActivity = Awaited<ReturnType<typeof fetchGitHubContributions>>;
 
 /**
  * Fetches activity data from various services and writes the counts to the database.
@@ -47,31 +52,31 @@ async function tracktor() {
     },
     {
       name: "github",
-      fetch: () => fetchGitHubContributions(currentYear, lastGitHubUpdate ?? ""),
+      fetch: () => fetchGitHubData(currentYear, lastGitHubUpdate ?? ""),
       key: "github",
       activityTypes: [
         {
           name: "commits",
-          getCount: (data: GitHubActivity) => data.totalCommits,
+          getCount: (data: GitHubData) => data.contributions?.totalCommits ?? 0,
         },
         {
           name: "repositories",
-          getCount: (data: GitHubActivity) => data.repositoryCount,
+          getCount: (data: GitHubData) => data.contributions?.repositoryCount ?? 0,
         },
       ],
     },
   ];
 
   type Totals = {
-    [key: string]: number | { totalCommits: number; repositoryCount: number };
+    [key: string]: number | GitHubData;
   };
 
   const totals: Totals = {
     letterboxd: 0,
     goodreads: 0,
     github: {
-      totalCommits: 0,
-      repositoryCount: 0,
+      contributions: { totalCommits: 0, repositoryCount: 0 },
+      languages: null,
     },
   };
 
@@ -86,21 +91,38 @@ async function tracktor() {
 
         await writeTracktorCount(service.name, currentYear, count, activityType.name);
       }
+
+      if (service.name === "github") {
+        const githubResult = result as GitHubData;
+        if (githubResult.languages && githubResult.languages.length > 0) {
+          await writeLanguageSnapshot(githubResult.languages, currentYear);
+        }
+      }
     } catch (error) {
       console.error(`Error fetching ${service.name} activity.`);
       console.error(error);
     }
   }
 
+  const githubData = totals.github as GitHubData;
+  const commits = githubData.contributions?.totalCommits ?? 0;
+  const repos = githubData.contributions?.repositoryCount ?? 0;
+
   console.log(
     `📚 Goodreads: ${totals.goodreads} new books read since the last run.
   🎥 Letterboxd: ${totals.letterboxd} new movies watched since the last run.
-  💻 GitHub: ${
-    typeof totals.github === "object" ? totals.github.totalCommits : 0
-  } new commits across ${
-      typeof totals.github === "object" ? totals.github.repositoryCount : 0
-    } repositories since the last run.`
+  💻 GitHub: ${commits} new commits across ${repos} repositories since the last run.`
   );
+
+  if (githubData.languages && githubData.languages.length > 0) {
+    console.log("\nGitHub Languages:");
+    for (const lang of githubData.languages.slice(0, 10)) {
+      const bytesFormatted = formatBytes(lang.bytes);
+      console.log(
+        `  ${lang.languageName}: ${lang.percentage}% (${bytesFormatted} across ${lang.repoCount} repos)`
+      );
+    }
+  }
 
   console.log(`👨🏻‍🌾 Tracktor finished at ${new Date().toISOString()} 🚜!`);
   return;
